@@ -86,7 +86,7 @@
 | GET | `/api/devices` | 设备列表、搜索、状态筛选 | C |
 | GET | `/api/stats` | 首页统计 | C |
 
-## 3. 接口详情（成员 A）
+## 3. 接口详情
 
 ### 3.1 设备详情
 
@@ -251,28 +251,28 @@
 | status | string | `pending` / `processing` / `resolved` |
 | updated_at | string | 最近更新时间 |
 
-## 5. 查询与统计接口（成员 C）
+## 5. 列表与统计（成员 C）
 
-### 5.1 设备列表、搜索与状态筛选
+### 5.1 设备列表（搜索 + 筛选 + 分页）
 
 `GET /api/devices`
 
 查询参数：
 
-| 参数 | 类型 | 必填 | 默认值 | 说明 |
-| --- | --- | --- | --- | --- |
-| keyword | string | 否 | 空 | 按设备 name 或 model 模糊搜索，不区分大小写 |
-| status | string | 否 | 空 | 只能是 normal / faulty；不传则不限状态 |
-| page | int | 否 | 1 | 页码，从 1 开始，必须 ≥ 1 |
-| page_size | int | 否 | 10 | 每页条数，范围 1~100 |
+| 参数 | 类型 | 必填 | 默认值 | 校验规则 | 说明 |
+| --- | --- | --- | --- | --- | --- |
+| keyword | string | 否 | 无 | — | 关键词，模糊匹配设备名称、型号、位置 |
+| status | string | 否 | 无 | `normal` / `faulty` | 不传或为空表示全部，**不要传 `all`** |
+| page | int | 否 | 1 | `>= 1` | 页码，从 1 开始 |
+| page_size | int | 否 | 20 | `1 ~ 100` | 每页条数 |
 
-校验规则：
+请求示例：
 
-- status 非法返回 400，message：`参数校验失败：status 只能是 'normal' or 'faulty' 之一`
-- page < 1 返回 400，message：`参数校验失败：page 必须大于等于 1`
-- page_size 不在 1~100 返回 400，message：`参数校验失败：page_size 必须在 1~100 之间`
+```
+GET /api/devices?keyword=示波器&status=faulty&page=1&page_size=10
+```
 
-成功响应 200：
+成功响应 `200`：
 
 ```json
 {
@@ -281,27 +281,55 @@
   "data": {
     "items": [
       {
-        "id": 1,
-        "name": "数字示波器 DS1104Z",
-        "model": "DS1104Z",
+        "id": 3,
+        "name": "可编程直流电源 E3631A",
+        "model": "E3631A",
         "location": "A-101",
-        "status": "normal",
+        "status": "faulty",
         "created_at": "2026-11-25T08:30:00+00:00"
       }
     ],
-    "total": 42,
+    "total": 1,
     "page": 1,
     "page_size": 10
   }
 }
 ```
 
-### 5.2 首页统计（待定）
+说明：
+
+- `items` 是设备对象数组，字段与设备详情里的 `device` 一致（不含巡检与故障）。
+- 排序：默认按 `id` 升序（或创建时间），如需变更请在群里说明。
+- 参数非法（如 `page=0`、`page_size=200`、`status=bad`）返回 `400`，走统一错误格式。
+- 无匹配数据时 `items` 为空数组，`total` 为 0，不报错。
+
+### 5.2 首页统计
 
 `GET /api/stats`
 
-返回字段待 C 确认后补充。建议字段名：
+返回字段：
 
 - `device_total`：设备总数
+- `device_normal`：正常设备数
 - `device_faulty`：故障设备数
-- `fault_pending` / `fault_processing` / `fault_resolved`：各状态故障数
+- `fault_pending`：待处理故障数
+- `fault_processing`：处理中故障数
+- `fault_resolved`：已解决故障数
+
+成功响应 `200`：
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "device_total": 42,
+    "device_normal": 35,
+    "device_faulty": 7,
+    "fault_pending": 3,
+    "fault_processing": 2,
+    "fault_resolved": 5
+  }
+}
+
+> 注意：列表接口返回结构已从"数组"变为"对象（items + total + page + page_size）"，前端取数据时请用 `data.items`，不要再直接遍历 `data`。
