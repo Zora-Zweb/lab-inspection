@@ -37,7 +37,7 @@ def list_devices(
         "code": 0,
         "message": "ok",
         "data": {
-            "items": items,
+            "items": [item.to_dict() for item in items],
             "total": total,
             "page": page,
             "page_size": page_size
