@@ -3,6 +3,7 @@ import {
   mockCreateInspection,
   mockGetDeviceDetail,
   mockGetDevices,
+  mockGetStats,
   mockUpdateFaultStatus,
 } from './mock'
 
@@ -38,7 +39,8 @@ export function updateFaultStatus(faultId, status) {
   return http.patch(`/faults/${faultId}/status`, { status })
 }
 
-// 5.2 首页统计（成员 C，字段待定，先透传）
+// 5.2 首页统计（成员 C）
 export function getStats() {
+  if (USE_MOCK) return mockGetStats()
   return http.get('/stats')
 }

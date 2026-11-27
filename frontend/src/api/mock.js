@@ -217,4 +217,21 @@ export async function mockUpdateFaultStatus(faultId, status) {
 
   return { ...fault, status, updated_at: new Date().toISOString() }
 }
+// 5.2 首页统计
+export async function mockGetStats() {
+  await new Promise((resolve) => setTimeout(resolve, 150))
+
+  const faultyDevices = DEVICES.filter((d) => d.status === 'faulty')
+  const faults = faultyDevices.flatMap(buildFaults)
+  const countBy = (s) => faults.filter((f) => f.status === s).length
+
+  return {
+    device_total: DEVICES.length,
+    device_normal: DEVICES.length - faultyDevices.length,
+    device_faulty: faultyDevices.length,
+    fault_pending: countBy('pending'),
+    fault_processing: countBy('processing'),
+    fault_resolved: countBy('resolved'),
+  }
+}
 
