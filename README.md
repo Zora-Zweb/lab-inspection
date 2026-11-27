@@ -25,6 +25,7 @@
 │   └── test_c_endpoints.py  接口测试
 ├── docs/
 │   └── api.md           接口约定（全组共同维护）
+├── frontend/            前端页面（Vue 3 + Vite）
 ├── requirements.txt
 └── README.md
 ```
@@ -32,6 +33,7 @@
 ## 环境要求
 
 - Python 3.11 及以上（已在 3.14 上验证）
+- Node.js 22.12 及以上（Vite 8 的最低要求，仅前端需要）
 
 ## 快速开始
 
@@ -114,7 +116,98 @@ pytest tests/ -v
 
 ## 前端
 
-前端页面由成员 B 开发，完成后在此补充启动步骤。
+Vue 3 + Vite 实现的巡检管理前端，通过 `/api` 与后端通信。
+
+前端不直接访问 8000 端口，而是在 `vite.config.js` 里配置了代理：所有 `/api` 开头的请求由 Vite 转发到 `http://127.0.0.1:8000`。这样浏览器发出的请求始终是同源的，不会触发 CORS。因此**前端必须和后端同时运行**。
+
+### 1. 安装依赖
+
+```bash
+cd frontend
+npm install
+```
+
+### 2. 启动开发服务器
+
+```bash
+npm run dev
+```
+
+终端会打印访问地址，默认 `http://127.0.0.1:5173`。按 `Ctrl + C` 停止服务。
+
+### 3. 没有后端时使用假数据
+
+后端接口未就绪时，可以让前端跑本地 Mock 数据，此时不需要启动后端。
+
+在 `frontend/` 目录下新建 `.env.local`，内容一行：
+
+```
+VITE_USE_MOCK=true
+```
+
+重新执行 `npm run dev` 生效。
+
+`.gitignore` 中已包含 `*.local`，因此这个文件只在本机生效，不会被提交。删掉它、或把值改成 `false`，即恢复真实的接口请求。
+
+Mock 数据在 `src/api/mock.js`，内置 26 台设备，其中 6 台带故障记录；页面新登记的巡检记录保存在 `sessionStorage`，刷新不丢，关闭标签页后清空。
+
+### 4. 页面说明
+
+| 路由 | 页面 | 功能 |
+| --- | --- | --- |
+| `/` | 首页 | 设备总数、正常数、故障数等统计卡片 |
+| `/devices` | 设备列表 | 分页、按名称/型号/位置搜索、按状态筛选 |
+| `/devices/:id` | 设备详情 | 设备信息、故障列表、登记巡检表单 |
+
+### 5. 目录结构
+
+```
+frontend/
+├── src/
+│   ├── api/
+│   │   ├── http.js        axios 实例、响应拦截器、错误信息翻译
+│   │   ├── index.js       6 个接口函数，含 Mock 开关
+│   │   └── mock.js        本地假数据实现
+│   ├── components/
+│   │   └── StatusTag.vue  状态标签
+│   ├── router/index.js    路由表
+│   ├── utils/format.js    时间格式化
+│   ├── views/
+│   │   ├── HomeView.vue
+│   │   ├── DeviceListView.vue
+│   │   └── DeviceDetailView.vue
+│   ├── App.vue            布局与导航
+│   ├── main.js            入口
+│   └── style.css          全局样式
+├── vite.config.js         开发服务器与 /api 代理
+└── package.json
+```
+
+### 6. 构建
+
+```bash
+npm run build
+```
+
+产物输出到 `frontend/dist/`（已在 `.gitignore` 中忽略）。本地预览构建结果：
+
+```bash
+npm run preview
+```
+
+### 7. 常见问题
+
+**页面白屏，浏览器控制台只有一行报错**
+先看运行 `npm run dev` 的那个终端窗口。Vue 的编译错误打印在那里，浏览器控制台通常只说 `Failed to fetch dynamically imported module`，看不到真正原因。
+
+**接口返回 502**
+Vite 代理起来了但后端没有启动。检查 `127.0.0.1:8000` 是否可访问，或者按第 3 节改用 Mock。
+
+**`npm run dev` 报 `ENOENT: no such file or directory, open 'package.json'`**
+当前目录不对。先 `cd frontend`。
+
+**出现 `EBADENGINE` 警告**
+Node 版本低于 22.12，需要升级 Node。
 
 ## 协作约定
 

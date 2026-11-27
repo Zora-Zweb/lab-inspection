@@ -1,0 +1,105 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+  color: #1f2328;
+  background: #f6f7f9;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  height: 56px;
+  padding: 0 24px;
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.brand {
+  font-weight: 600;
+  color: #1f2329;
+  text-decoration: none;
+}
+
+.nav a {
+  padding: 6px 10px;
+  color: #4b5563;
+  text-decoration: none;
+  border-radius: 6px;
+}
+
+.nav a:hover {
+  background: #f2f3f5;
+}
+
+/* 当前路由对应的链接会自动带上这个 class */
+.nav a.router-link-active {
+  color: #2563eb;
+  background: #eff6ff;
+}
+
+.app-main {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.page {
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.muted {
+  color: #6b7280;
+}
+/* 通用表单控件：列表页、详情页共用 */
+.input {
+  height: 34px;
+  padding: 0 10px;
+  font-size: 14px;
+  color: #1f2328;
+  background: #fff;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+}
+.input:focus {
+  border-color: #2563eb;
+  outline: none;
+}
+.select {
+  min-width: 120px;
+}
+
+.btn {
+  height: 34px;
+  padding: 0 14px;
+  font-size: 14px;
+  color: #1f2328;
+  cursor: pointer;
+  background: #fff;
+  border: 1px solid #d0d7de;
+  border-radius: 6px;
+}
+.btn:hover:not(:disabled) {
+  background: #f6f7f9;
+}
+.btn:disabled {
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+.btn.primary {
+  color: #fff;
+  background: #2563eb;
+  border-color: #2563eb;
+}
+.btn.primary:hover:not(:disabled) {
+  background: #1d4ed8;
+}
