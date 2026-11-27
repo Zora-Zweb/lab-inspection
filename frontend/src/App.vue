@@ -1,8 +1,18 @@
 <script setup>
-// 项目根组件。第 3 步接入路由后，这里会换成 <RouterView />，
-// 由路由决定渲染哪个页面。
+// 根组件：顶部导航 + 路由出口
+// RouterLink / RouterView 由 vue-router 全局注册，不需要 import
 </script>
 
 <template>
-  <h1>实验室设备巡检与故障管理平台</h1>
+  <header class="app-header">
+    <RouterLink class="brand" to="/devices">实验室设备巡检平台</RouterLink>
+    <nav class="nav">
+      <RouterLink to="/devices">设备列表</RouterLink>
+    </nav>
+  </header>
+
+  <main class="app-main">
+    <!-- 这里就是“路由出口”：URL 匹配到哪个组件，就渲染在这里 -->
+    <RouterView />
+  </main>
 </template>
