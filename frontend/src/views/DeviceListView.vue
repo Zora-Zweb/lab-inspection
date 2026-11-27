@@ -11,7 +11,7 @@ const query = reactive({
   keyword: '',
   status: '',
   page: 1,
-  pageSize: 10,
+  pageSize: 20,
 })
 
 const items = ref([])

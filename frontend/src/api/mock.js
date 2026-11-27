@@ -39,16 +39,19 @@ const DEVICES = RAW.map(([name, model, location, status], i) => ({
 }))
 
 // 返回结构与契约 5.1 完全一致：{ items, total, page, page_size }
-export async function mockGetDevices({ keyword = '', status = '', page = 1, page_size = 10 } = {}) {
+export async function mockGetDevices({ keyword = '', status = '', page = 1, page_size = 20 } = {}) {
   // 加一点延迟，方便看清"加载中"状态
   await new Promise((resolve) => setTimeout(resolve, 250))
 
   let list = DEVICES
   const kw = String(keyword).trim().toLowerCase()
-  // 契约规定：只按 name 或 model 模糊搜索，不区分大小写
+  // 契约 5.1：keyword 模糊匹配 name、model、location，不区分大小写
   if (kw) {
     list = list.filter(
-      (d) => d.name.toLowerCase().includes(kw) || d.model.toLowerCase().includes(kw),
+      (d) =>
+        d.name.toLowerCase().includes(kw) ||
+        d.model.toLowerCase().includes(kw) ||
+        d.location.toLowerCase().includes(kw),
     )
   }
   if (status) {
