@@ -33,7 +33,7 @@ http.interceptors.response.use(
         error.code === 'ECONNABORTED'
           ? '请求超时，请检查后端服务是否正常'
           : '无法连接服务器，请确认后端已启动（http://127.0.0.1:8000）'
-            return Promise.reject(makeError(message, 'NETWORK'))
+      return Promise.reject(makeError(message, 'NETWORK'))
     }
 
     // 502/503/504：代理连不上后端，Vite 会自己回 502，这里翻译成人话
@@ -44,7 +44,6 @@ http.interceptors.response.use(
     }
 
     // 服务端返回了 400 / 404 / 500，body.message 是后端写好的中文原因
-
     const body = error.response.data
     return Promise.reject(
       makeError(body?.message || `请求失败（HTTP ${error.response.status}）`, body?.code ?? error.response.status),

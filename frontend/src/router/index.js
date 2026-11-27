@@ -5,8 +5,8 @@ import DeviceDetailView from '../views/DeviceDetailView.vue'
 
 // 路由表：一个 URL 对应一个页面组件
 const routes = [
-  // 访问根路径时自动跳到设备列表
-    { path: '/', name: 'home', component: HomeView },
+  // 根路径给统计首页，不再是"自动跳到列表"
+  { path: '/', name: 'home', component: HomeView },
 
   // name 是路由名，后面代码里跳转用 router.push({ name: 'device-detail', ... })
   { path: '/devices', name: 'device-list', component: DeviceListView },

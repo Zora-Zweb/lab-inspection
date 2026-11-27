@@ -67,6 +67,7 @@ export async function mockGetDevices({ keyword = '', status = '', page = 1, page
     page_size,
   }
 }
+
 const INSPECTORS = ['李同学', '张同学', '王同学', '赵同学']
 const REMARK_NORMAL = ['自检通过', '外观完好，运行正常', '开机自检正常']
 const REMARK_ABNORMAL = ['带载后电压不稳', '散热风扇有异响', '读数漂移偏大']
@@ -76,6 +77,7 @@ const FAULT_DESC = ['带载后输出电压不稳定，掉压明显', '开机自�
 function iso(day, hour, minute) {
   return new Date(Date.UTC(2026, 10, day, hour, minute)).toISOString()
 }
+
 // 故障状态的"持久化"：{ [faultId]: 'processing' }
 const FAULT_KEY = 'mock-fault-status'
 
@@ -138,13 +140,13 @@ export async function mockGetDeviceDetail(id) {
   })
 
   // 故障设备给两条：一条待处理、一条已解决（后面第 8 步正好有东西可改状态）
-const faults = buildFaults(device)
+  const faults = buildFaults(device)
 
-    // 把本次会话中新登记的巡检合并到最前面
+  // 把本次会话中新登记的巡检合并到最前面
   const extra = loadExtra()[device.id] || []
   return { device, inspections: [...extra, ...inspections], faults }
-
 }
+
 function mockError(message, code) {
   const err = new Error(message)
   err.code = code
@@ -196,6 +198,7 @@ export async function mockCreateInspection(deviceId, payload = {}) {
 
   return record
 }
+
 // 3.3 更新故障状态
 export async function mockUpdateFaultStatus(faultId, status) {
   await new Promise((resolve) => setTimeout(resolve, 150))
@@ -217,6 +220,7 @@ export async function mockUpdateFaultStatus(faultId, status) {
 
   return { ...fault, status, updated_at: new Date().toISOString() }
 }
+
 // 5.2 首页统计
 export async function mockGetStats() {
   await new Promise((resolve) => setTimeout(resolve, 150))

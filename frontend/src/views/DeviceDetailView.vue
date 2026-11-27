@@ -34,6 +34,7 @@ async function load() {
 
 // 关键：从 /devices/3 点"返回列表"再点另一台时，路由变了但组件会被复用，
 // onMounted 不会重新执行，所以必须监听 id 变化重新拉数据
+
 // ---------- 登记巡检 ----------
 const formOpen = ref(false)
 const submitting = ref(false)
@@ -99,6 +100,7 @@ async function submit() {
     submitting.value = false
   }
 }
+
 // ---------- 更新故障状态 ----------
 // 契约 1.4：三个状态，3.3 说明暂不限制流转方向，可任意互改
 const FAULT_STATUS_OPTIONS = [
@@ -177,7 +179,7 @@ onMounted(load)
             <p class="fault-desc">{{ fault.description }}</p>
             <p class="fault-meta">最近更新：{{ formatDateTime(fault.updated_at) }}</p>
           </div>
-            <select
+          <select
             class="status-select"
             :value="fault.status"
             :disabled="savingFaultId === fault.id"
@@ -190,9 +192,9 @@ onMounted(load)
         </li>
       </ul>
       <p v-else class="hint">暂无故障记录。</p>
-            <p v-if="faultError" class="form-error">{{ faultError }}</p>
+      <p v-if="faultError" class="form-error">{{ faultError }}</p>
 
-            <!-- 巡检记录 -->
+      <!-- 巡检记录 -->
       <div class="section-head">
         <h3 class="section-title">巡检记录 <span class="badge">{{ inspections.length }}</span></h3>
         <button class="btn" @click="toggleForm">{{ formOpen ? '收起' : '登记巡检' }}</button>

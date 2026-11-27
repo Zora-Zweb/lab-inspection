@@ -5,7 +5,7 @@
 
 <template>
   <header class="app-header">
-        <RouterLink class="brand" to="/">实验室设备巡检平台</RouterLink>
+    <RouterLink class="brand" to="/">实验室设备巡检平台</RouterLink>
     <nav class="nav">
       <RouterLink to="/">首页</RouterLink>
       <RouterLink to="/devices">设备列表</RouterLink>
