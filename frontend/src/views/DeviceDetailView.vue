@@ -1,6 +1,6 @@
 <script setup>
-import { onMounted, ref, watch } from 'vue'
-import { getDeviceDetail } from '../api'
+import { onMounted, reactive, ref, watch } from 'vue'
+import { createInspection, getDeviceDetail } from '../api'
 import StatusTag from '../components/StatusTag.vue'
 import { formatDateTime } from '../utils/format'
 
@@ -34,6 +34,72 @@ async function load() {
 
 // 关键：从 /devices/3 点"返回列表"再点另一台时，路由变了但组件会被复用，
 // onMounted 不会重新执行，所以必须监听 id 变化重新拉数据
+// ---------- 登记巡检 ----------
+const formOpen = ref(false)
+const submitting = ref(false)
+const formError = ref('')
+const successMessage = ref('')
+const form = reactive({ result: 'normal', inspector: '', remark: '' })
+
+function resetForm() {
+  form.result = 'normal'
+  form.inspector = ''
+  form.remark = ''
+  formError.value = ''
+}
+
+function toggleForm() {
+  if (formOpen.value) {
+    formOpen.value = false
+    resetForm()
+  } else {
+    formOpen.value = true
+  }
+}
+
+async function submit() {
+  formError.value = ''
+  successMessage.value = ''
+
+  // 前端先挡一遍明显错误，减少无效请求；后端仍会校验
+  const inspector = form.inspector.trim()
+  if (!inspector) {
+    formError.value = '请填写巡检人'
+    return
+  }
+  if (inspector.length > 32) {
+    formError.value = '巡检人最多 32 个字符'
+    return
+  }
+  if (form.remark.length > 200) {
+    formError.value = '备注最多 200 个字符'
+    return
+  }
+
+  submitting.value = true
+  try {
+    const created = await createInspection(props.id, {
+      result: form.result,
+      inspector,
+      remark: form.remark.trim(),
+    })
+    // 契约 3.1：巡检按时间倒序，新记录插到最前面
+    inspections.value = [created, ...inspections.value]
+    successMessage.value = '巡检记录已保存'
+    formOpen.value = false
+    resetForm()
+    // 3 秒后自动收起提示
+    setTimeout(() => {
+      successMessage.value = ''
+    }, 3000)
+  } catch (e) {
+    // 后端返回的 400 中文原因，直接展示在表单里
+    formError.value = e.message
+  } finally {
+    submitting.value = false
+  }
+}
+
 watch(() => props.id, load)
 
 onMounted(load)
@@ -85,8 +151,58 @@ onMounted(load)
       </ul>
       <p v-else class="hint">暂无故障记录。</p>
 
-      <!-- 巡检记录 -->
-      <h3 class="section-title">巡检记录 <span class="badge">{{ inspections.length }}</span></h3>
+            <!-- 巡检记录 -->
+      <div class="section-head">
+        <h3 class="section-title">巡检记录 <span class="badge">{{ inspections.length }}</span></h3>
+        <button class="btn" @click="toggleForm">{{ formOpen ? '收起' : '登记巡检' }}</button>
+      </div>
+
+      <p v-if="successMessage" class="success">{{ successMessage }}</p>
+
+      <!-- 登记巡检表单 -->
+      <form v-if="formOpen" class="inspection-form" @submit.prevent="submit">
+        <div class="field">
+          <span class="label">巡检结果</span>
+          <div class="radios">
+            <label><input v-model="form.result" type="radio" value="normal" /> 正常</label>
+            <label><input v-model="form.result" type="radio" value="abnormal" /> 异常</label>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="label" for="inspector">巡检人</label>
+          <input
+            id="inspector"
+            v-model="form.inspector"
+            class="input"
+            maxlength="32"
+            placeholder="例如：张同学"
+          />
+          <span class="hint-inline">{{ form.inspector.length }}/32</span>
+        </div>
+
+        <div class="field">
+          <label class="label" for="remark">备注</label>
+          <textarea
+            id="remark"
+            v-model="form.remark"
+            class="input textarea"
+            rows="3"
+            maxlength="200"
+            placeholder="选填，例如：带载后电压不稳"
+          ></textarea>
+          <span class="hint-inline">{{ form.remark.length }}/200</span>
+        </div>
+
+        <p v-if="formError" class="form-error">{{ formError }}</p>
+
+        <div class="actions">
+          <button class="btn primary" type="submit" :disabled="submitting">
+            {{ submitting ? '提交中…' : '提交' }}
+          </button>
+          <button class="btn" type="button" :disabled="submitting" @click="toggleForm">取消</button>
+        </div>
+      </form>
       <ul v-if="inspections.length" class="timeline">
         <li v-for="item in inspections" :key="item.id" class="timeline-item">
           <div class="timeline-head">
@@ -233,5 +349,82 @@ onMounted(load)
   margin: 0 0 20px;
   color: #6b7280;
   text-align: center;
+}
+.section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 0 12px;
+}
+.section-head .section-title {
+  margin: 0;
+}
+
+.success {
+  padding: 8px 12px;
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: #0f7b3f;
+  background: #e8f7ee;
+  border: 1px solid #cdebd8;
+  border-radius: 6px;
+}
+
+.inspection-form {
+  padding: 16px;
+  margin-bottom: 16px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+}
+
+.field {
+  margin-bottom: 14px;
+}
+.label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #4b5563;
+}
+.radios {
+  display: flex;
+  gap: 18px;
+  font-size: 14px;
+}
+.radios label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  cursor: pointer;
+}
+.textarea {
+  display: block;
+  width: 100%;
+  height: auto;
+  padding: 8px 10px;
+  font-family: inherit;
+  line-height: 1.6;
+  resize: vertical;
+}
+.hint-inline {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #9ca3af;
+  text-align: right;
+}
+.form-error {
+  padding: 8px 12px;
+  margin: 0 0 12px;
+  font-size: 14px;
+  color: #b42318;
+  background: #fdecea;
+  border-radius: 6px;
+}
+.actions {
+  display: flex;
+  gap: 8px;
 }
 </style>

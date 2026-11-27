@@ -1,5 +1,5 @@
 import http from './http'
-import { mockGetDeviceDetail, mockGetDevices } from './mock'
+import { mockCreateInspection, mockGetDeviceDetail, mockGetDevices } from './mock'
 
 // 开发开关：.env.local 里写 VITE_USE_MOCK=true 时走本地假数据
 const USE_MOCK = import.meta.env.VITE_USE_MOCK === 'true'
@@ -24,6 +24,7 @@ export function getDeviceDetail(id) {
 
 // 3.2 登记巡检（成员 A）
 export function createInspection(deviceId, payload) {
+  if (USE_MOCK) return mockCreateInspection(deviceId, payload)
   return http.post(`/devices/${deviceId}/inspections`, payload)
 }
 

@@ -164,48 +164,6 @@ onMounted(load)
   margin-bottom: 12px;
 }
 
-.input {
-  height: 34px;
-  padding: 0 10px;
-  font-size: 14px;
-  color: #1f2328;
-  background: #fff;
-  border: 1px solid #d0d7de;
-  border-radius: 6px;
-}
-.input:focus {
-  border-color: #2563eb;
-  outline: none;
-}
-.select {
-  min-width: 120px;
-}
-
-.btn {
-  height: 34px;
-  padding: 0 14px;
-  font-size: 14px;
-  color: #1f2328;
-  cursor: pointer;
-  background: #fff;
-  border: 1px solid #d0d7de;
-  border-radius: 6px;
-}
-.btn:hover:not(:disabled) {
-  background: #f6f7f9;
-}
-.btn:disabled {
-  color: #9ca3af;
-  cursor: not-allowed;
-}
-.btn.primary {
-  color: #fff;
-  background: #2563eb;
-  border-color: #2563eb;
-}
-.btn.primary:hover:not(:disabled) {
-  background: #1d4ed8;
-}
 .btn.link {
   height: auto;
   padding: 0;

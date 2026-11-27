@@ -122,5 +122,59 @@ export async function mockGetDeviceDetail(id) {
         ]
       : []
 
-  return { device, inspections, faults }
+    // 把本次会话中新登记的巡检合并到最前面
+  const extra = loadExtra()[device.id] || []
+  return { device, inspections: [...extra, ...inspections], faults }
+
+}
+function mockError(message, code) {
+  const err = new Error(message)
+  err.code = code
+  return err
+}
+
+// 假数据的"持久化"：新登记的巡检存到 sessionStorage，刷新后还在
+const EXTRA_KEY = 'mock-extra-inspections'
+
+function loadExtra() {
+  try {
+    return JSON.parse(sessionStorage.getItem(EXTRA_KEY)) || {}
+  } catch {
+    return {}
+  }
+}
+
+// 3.2 登记巡检：校验规则照契约实现，错误文案也照抄
+export async function mockCreateInspection(deviceId, payload = {}) {
+  await new Promise((resolve) => setTimeout(resolve, 200))
+
+  const device = DEVICES.find((d) => d.id === Number(deviceId))
+  if (!device) throw mockError(`设备不存在：id=${deviceId}`, 404)
+
+  const { result, inspector = '', remark = '' } = payload
+  const name = String(inspector).trim()
+
+  if (!['normal', 'abnormal'].includes(result)) {
+    throw mockError("参数校验失败：result 只能是 'normal' or 'abnormal' 之一", 400)
+  }
+  if (!name) throw mockError('参数校验失败：inspector 不能为空', 400)
+  if (name.length > 32) throw mockError('参数校验失败：inspector 长度不能超过 32 个字符', 400)
+  if (String(remark).length > 200) throw mockError('参数校验失败：remark 长度不能超过 200 个字符', 400)
+
+  const record = {
+    id: Date.now(),
+    device_id: device.id,
+    result,
+    remark: String(remark).trim(),
+    inspector: name,
+    created_at: new Date().toISOString(),
+  }
+
+  const map = loadExtra()
+  const list = map[device.id] || []
+  list.unshift(record) // 最新的放最前面，符合契约"按时间倒序"
+  map[device.id] = list
+  sessionStorage.setItem(EXTRA_KEY, JSON.stringify(map))
+
+  return record
 }
