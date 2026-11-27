@@ -5,7 +5,7 @@ from pathlib import Path
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
-# 数据库文件放在 backend/lab.db，已在 .gitignore 中排除，不要提交
+# 数据库文件放在仓库根目录的 lab.db，已在 .gitignore 中排除，不要提交
 DB_PATH = Path(__file__).resolve().parent.parent / "lab.db"
 
 engine = create_engine(

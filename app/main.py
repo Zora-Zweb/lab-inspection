@@ -54,17 +54,25 @@ async def http_exception_handler(request: Request, exc: StarletteHTTPException):
 
 def _validation_message(error: dict) -> str:
     """把 Pydantic 的英文校验提示翻成前端可直接展示的中文。"""
-    field = ".".join(str(item) for item in error["loc"] if item != "body")
+    # 去掉 body / query / path 这类定位前缀，只保留字段名
+    field = ".".join(str(item) for item in error["loc"] if item not in ("body", "query", "path"))
     kind = error["type"]
+    ctx = error.get("ctx") or {}
 
     if kind == "missing":
         return f"{field} 是必填项"
     if kind == "literal_error":
-        return f"{field} 只能是 {error['ctx']['expected']} 之一"
+        return f"{field} 只能是 {ctx.get('expected')} 之一"
     if kind == "string_too_short":
         return f"{field} 不能为空"
     if kind == "string_too_long":
         return f"{field} 长度超出限制"
+    if kind == "greater_than_equal":
+        return f"{field} 必须大于等于 {ctx.get('ge')}"
+    if kind == "less_than_equal":
+        return f"{field} 必须小于等于 {ctx.get('le')}"
+    if kind in ("int_parsing", "int_type"):
+        return f"{field} 必须是整数"
     return f"{field} {error['msg']}"
 
 
