@@ -64,3 +64,63 @@ export async function mockGetDevices({ keyword = '', status = '', page = 1, page
     page_size,
   }
 }
+const INSPECTORS = ['李同学', '张同学', '王同学', '赵同学']
+const REMARK_NORMAL = ['自检通过', '外观完好，运行正常', '开机自检正常']
+const REMARK_ABNORMAL = ['带载后电压不稳', '散热风扇有异响', '读数漂移偏大']
+const FAULT_DESC = ['带载后输出电压不稳定，掉压明显', '开机自检不通过，报警灯常亮']
+
+// 生成 UTC 时间的 ISO 字符串，和契约 1.5 的格式保持一致
+function iso(day, hour, minute) {
+  return new Date(Date.UTC(2026, 10, day, hour, minute)).toISOString()
+}
+
+// 详情接口的假数据：device + inspections + faults
+export async function mockGetDeviceDetail(id) {
+  await new Promise((resolve) => setTimeout(resolve, 200))
+
+  const device = DEVICES.find((d) => d.id === Number(id))
+  // 契约 3.1：设备不存在返回 404，这里抛错让上层走 catch
+  if (!device) {
+    const err = new Error(`设备不存在：id=${id}`)
+    err.code = 404
+    throw err
+  }
+
+  // 每台设备 3 条巡检记录，故障设备的最新一条是 abnormal
+  const inspections = Array.from({ length: 3 }, (_, k) => {
+    const abnormal = device.status === 'faulty' && k === 0
+    return {
+      id: device.id * 100 + k,
+      device_id: device.id,
+      result: abnormal ? 'abnormal' : 'normal',
+      remark: abnormal
+        ? REMARK_ABNORMAL[device.id % REMARK_ABNORMAL.length]
+        : REMARK_NORMAL[device.id % REMARK_NORMAL.length],
+      inspector: INSPECTORS[(device.id + k) % INSPECTORS.length],
+      created_at: iso(25 - k * 4, 9 + k, 30),
+    }
+  })
+
+  // 故障设备给两条：一条待处理、一条已解决（后面第 8 步正好有东西可改状态）
+  const faults =
+    device.status === 'faulty'
+      ? [
+          {
+            id: device.id * 10 + 1,
+            device_id: device.id,
+            description: FAULT_DESC[device.id % FAULT_DESC.length],
+            status: 'pending',
+            updated_at: iso(24, 9, 20),
+          },
+          {
+            id: device.id * 10 + 2,
+            device_id: device.id,
+            description: '按键接触不良，已更换前面板',
+            status: 'resolved',
+            updated_at: iso(12, 14, 5),
+          },
+        ]
+      : []
+
+  return { device, inspections, faults }
+}
