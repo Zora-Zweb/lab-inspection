@@ -73,6 +73,39 @@ const FAULT_DESC = ['带载后输出电压不稳定，掉压明显', '开机自�
 function iso(day, hour, minute) {
   return new Date(Date.UTC(2026, 10, day, hour, minute)).toISOString()
 }
+// 故障状态的"持久化"：{ [faultId]: 'processing' }
+const FAULT_KEY = 'mock-fault-status'
+
+function loadFaultStatus() {
+  try {
+    return JSON.parse(sessionStorage.getItem(FAULT_KEY)) || {}
+  } catch {
+    return {}
+  }
+}
+
+// 故障列表：id 末位区分两条记录，状态用 sessionStorage 覆盖，改动才留得住
+function buildFaults(device) {
+  if (device.status !== 'faulty') return []
+  const overrides = loadFaultStatus()
+  const base = [
+    {
+      id: device.id * 10 + 1,
+      device_id: device.id,
+      description: FAULT_DESC[device.id % FAULT_DESC.length],
+      status: 'pending',
+      updated_at: iso(24, 9, 20),
+    },
+    {
+      id: device.id * 10 + 2,
+      device_id: device.id,
+      description: '按键接触不良，已更换前面板',
+      status: 'resolved',
+      updated_at: iso(12, 14, 5),
+    },
+  ]
+  return base.map((f) => (overrides[f.id] ? { ...f, status: overrides[f.id] } : f))
+}
 
 // 详情接口的假数据：device + inspections + faults
 export async function mockGetDeviceDetail(id) {
@@ -102,25 +135,7 @@ export async function mockGetDeviceDetail(id) {
   })
 
   // 故障设备给两条：一条待处理、一条已解决（后面第 8 步正好有东西可改状态）
-  const faults =
-    device.status === 'faulty'
-      ? [
-          {
-            id: device.id * 10 + 1,
-            device_id: device.id,
-            description: FAULT_DESC[device.id % FAULT_DESC.length],
-            status: 'pending',
-            updated_at: iso(24, 9, 20),
-          },
-          {
-            id: device.id * 10 + 2,
-            device_id: device.id,
-            description: '按键接触不良，已更换前面板',
-            status: 'resolved',
-            updated_at: iso(12, 14, 5),
-          },
-        ]
-      : []
+const faults = buildFaults(device)
 
     // 把本次会话中新登记的巡检合并到最前面
   const extra = loadExtra()[device.id] || []
@@ -178,3 +193,25 @@ export async function mockCreateInspection(deviceId, payload = {}) {
 
   return record
 }
+// 3.3 更新故障状态
+export async function mockUpdateFaultStatus(faultId, status) {
+  await new Promise((resolve) => setTimeout(resolve, 150))
+
+  if (!['pending', 'processing', 'resolved'].includes(status)) {
+    throw mockError("参数校验失败：status 只能是 'pending', 'processing' or 'resolved' 之一", 400)
+  }
+
+  const id = Number(faultId)
+  const fault = DEVICES.filter((d) => d.status === 'faulty')
+    .flatMap(buildFaults)
+    .find((f) => f.id === id)
+
+  if (!fault) throw mockError(`故障不存在：id=${faultId}`, 404)
+
+  const map = loadFaultStatus()
+  map[id] = status
+  sessionStorage.setItem(FAULT_KEY, JSON.stringify(map))
+
+  return { ...fault, status, updated_at: new Date().toISOString() }
+}
+

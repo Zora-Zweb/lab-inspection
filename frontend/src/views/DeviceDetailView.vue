@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, reactive, ref, watch } from 'vue'
-import { createInspection, getDeviceDetail } from '../api'
+import { createInspection, getDeviceDetail, updateFaultStatus } from '../api'
 import StatusTag from '../components/StatusTag.vue'
 import { formatDateTime } from '../utils/format'
 
@@ -99,6 +99,37 @@ async function submit() {
     submitting.value = false
   }
 }
+// ---------- 更新故障状态 ----------
+// 契约 1.4：三个状态，3.3 说明暂不限制流转方向，可任意互改
+const FAULT_STATUS_OPTIONS = [
+  { value: 'pending', label: '待处理' },
+  { value: 'processing', label: '处理中' },
+  { value: 'resolved', label: '已解决' },
+]
+
+const savingFaultId = ref(null)
+const faultError = ref('')
+
+async function changeFaultStatus(fault, nextStatus) {
+  if (nextStatus === fault.status) return
+
+  const prevStatus = fault.status
+  fault.status = nextStatus // 乐观更新：先让界面立刻响应
+  savingFaultId.value = fault.id
+  faultError.value = ''
+
+  try {
+    const updated = await updateFaultStatus(fault.id, nextStatus)
+    // 以服务端返回的为准，updated_at 会变
+    fault.status = updated.status
+    fault.updated_at = updated.updated_at
+  } catch (e) {
+    fault.status = prevStatus // 失败必须回滚，否则界面和后端说的不是一回事
+    faultError.value = e.message
+  } finally {
+    savingFaultId.value = null
+  }
+}
 
 watch(() => props.id, load)
 
@@ -146,10 +177,20 @@ onMounted(load)
             <p class="fault-desc">{{ fault.description }}</p>
             <p class="fault-meta">最近更新：{{ formatDateTime(fault.updated_at) }}</p>
           </div>
-          <StatusTag kind="fault" :status="fault.status" />
+            <select
+            class="status-select"
+            :value="fault.status"
+            :disabled="savingFaultId === fault.id"
+            @change="changeFaultStatus(fault, $event.target.value)"
+          >
+            <option v-for="opt in FAULT_STATUS_OPTIONS" :key="opt.value" :value="opt.value">
+              {{ opt.label }}
+            </option>
+          </select>
         </li>
       </ul>
       <p v-else class="hint">暂无故障记录。</p>
+            <p v-if="faultError" class="form-error">{{ faultError }}</p>
 
             <!-- 巡检记录 -->
       <div class="section-head">
@@ -426,5 +467,18 @@ onMounted(load)
 .actions {
   display: flex;
   gap: 8px;
+}
+.status-select {
+  padding: 4px 8px;
+  font-size: 13px;
+  color: #1f2328;
+  background: #fff;
+  border: 1px solid #d0d5dd;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.status-select:disabled {
+  color: #9ca3af;
+  cursor: progress;
 }
 </style>
